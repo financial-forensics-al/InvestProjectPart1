@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Dashboard - Gantt & Roadmap</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        body {
+            background-color: #f3f4f6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Header styles */
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #1f2937;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .stat-icon.calendar { background: #dbeafe; color: #1d4ed8; }
+        .stat-icon.users { background: #dcfce7; color: #059669; }
+        .stat-icon.money { background: #fef3c7; color: #d97706; }
+        .stat-icon.doc { background: #f3e8ff; color: #7c3aed; }
+        
+        .stat-text .label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .stat-text .value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        /* Tab styles */
+        .tabs-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+        
+        .tabs-header {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+            background: white;
+            overflow-x: auto;
+        }
+        
+        .tab-btn {
+            padding: 16px 32px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn:hover {
+            color: #374151;
+            background: #f9fafb;
+        }
+        
+        .tab-btn.active {
+            color: #2563eb;
+            border-bottom: 3px solid #2563eb;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 24px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        
+        /* Gantt chart styles */
+        .gantt-container {
+            overflow-x: auto;
+        }
+        
+        .timeline {
+            display: flex;
+            margin-left: 300px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .month-cell {
+            width: 80px;
+            text-align: center;
+            padding: 8px 4px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4b5563;
+            border-left: 1px solid #e5e7eb;
+        }
+        
+        .stage {
+            margin-bottom: 30px;
+        }
+        
+        .stage-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .stage-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6b7280;
+            margin-right: 10px;
+            font-size: 18px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .stage-info {
+            width: 280px;
+            padding-right: 20px;
+        }
+        
+        .stage-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        
+        .stage-meta {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .stage-bar-container {
+            flex: 1;
+            position: relative;
+            height: 35px;
+            min-width: 960px;
+        }
+        
+        .stage-bar {
+            position: absolute;
+            height: 100%;
+            border-radius: 6px;
+            opacity: 0.2;
+        }
+        
+        .task {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            margin-left: 50px;
+        }
+        
+        .task-name {
+            width: 280px;
+            padding-right: 20px;
+            font-size: 14px;
+            color: #374151;
+        }
+        
+        .task-bar-container {
+            flex: 1;
+            position: relative;
+            height: 25px;
+            min-width: 960px;
+        }
+        
+        .task-bar {
+            position: absolute;
+            height: 100%;
+            border-radius: 4px;
+        }
+        
+        /* Colors */
+        .blue { background-color: #3b82f6; }
+        .green { background-color: #10b981; }
+        .purple { background-color: #8b5cf6; }
+        .orange { background-color: #f97316; }
+        
+        /* Roadmap styles */
+        .roadmap-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .roadmap-stage {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 40px;
+        }
+        
+        .stage-number {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+        }
+        
+        .stage-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 24px;
+            transition: box-shadow 0.3s;
+        }
+        
+        .stage-card:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .stage-card h3 {
+            font-size: 18px;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+        
+        .stage-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .detail-item {
+            font-size: 14px;
+        }
+        
+        .detail-label {
+            color: #6b7280;
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .task-list {
+            font-size: 14px;
+            color: #374151;
+        }
+        
+        .task-list ul {
+            list-style: disc;
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+        
+        .task-list li {
+            margin-bottom: 4px;
+        }
+        
+        .connector {
+            position: absolute;
+            left: 25px;
+            top: 50px;
+            bottom: -40px;
+            width: 2px;
+            background: #d1d5db;
+        }
+        
+        /* Table styles */
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+        }
+        
+        th {
+            background: #f3f4f6;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+        
+        td {
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            color: #4b5563;
+        }
+        
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        .highlight {
+            background: #fef3c7;
+            font-weight: 600;
+        }
+        
+        /* Budget styles */
+        .budget-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .budget-card {
+            border-radius: 10px;
+            padding: 24px;
+        }
+        
+        .budget-card.fot {
+            background: #dbeafe;
+            border-left: 5px solid #1d4ed8;
+        }
+        
+        .budget-card.invest {
+            background: #dcfce7;
+            border-left: 5px solid #059669;
+        }
+        
+        .budget-card.total {
+            background: #f3e8ff;
+            border-left: 5px solid #7c3aed;
+        }
+        
+        .budget-label {
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 8px;
+        }
+        
+        .budget-amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+        
+        .budget-desc {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #3b82f6;
+        }
+        
+        .note-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px;
+            margin-top: 24px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .note-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 8px;
+        }
+        
+        .note-list {
+            color: #92400e;
+            font-size: 14px;
+        }
+        
+        .note-list li {
+            margin-bottom: 4px;
+        }
+        
+        /* Risk items */
+        .risk-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .risk-icon {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        
+        /* Grid layout */
+        .grid-2col {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-top: 24px;
+        }
+        
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .budget-summary {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid-2col {
+                grid-template-columns: 1fr;
+            }
+            
+            .stage-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .timeline {
+                margin-left: 0;
+            }
+            
+            .stage-header, .task {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .stage-info, .task-name {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .stage-bar-container, .task-bar-container {
+                min-width: 100%;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Электронный финансовый документооборот, качество и контроль данных, управление платежами</h1>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-icon calendar">📅</div>
+                    <div class="stat-text">
+                        <div class="label">Период</div>
+                        <div class="value">4 кв 2025 - 3 кв 2026</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon users">👥</div>
+                    <div class="stat-text">
+                        <div class="label">Команда</div>
+                        <div class="value">12 человек</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon money">💰</div>
+                    <div class="stat-text">
+                        <div class="label">Бюджет</div>
+                        <div class="value">84 714 ₽</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon doc">📋</div>
+                    <div class="stat-text">
+                        <div class="label">Этапов</div>
+                        <div class="value">4</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-container">
+            <div class="tabs-header">
+                <button class="tab-btn active" onclick="switchTab('gantt')">Диаграмма Ганта</button>
+                <button class="tab-btn" onclick="switchTab('roadmap')">Road-map</button>
+                <button class="tab-btn" onclick="switchTab('resources')">Ресурсный план</button>
+                <button class="tab-btn" onclick="switchTab('budget')">Бюджет</button>
+            </div>
+
+            <!-- Gantt Tab -->
+            <div id="gantt-tab" class="tab-content active">
+                <h2 class="tab-title">Диаграмма Ганта</h2>
+                <div class="gantt-container">
+                    <!-- Timeline will be inserted by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Roadmap Tab -->
+            <div id="roadmap-tab" class="tab-content">
+                <h2 class="tab-title">Стратегический Road-map</h2>
+                <div class="roadmap-container">
+                    <!-- Roadmap will be inserted by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Resources Tab -->
+            <div id="resources-tab" class="tab-content">
+                <h2 class="tab-title">Ресурсный план</h2>
+                <div class="table-container">
+                    <!-- Table will be inserted by JavaScript -->
+                </div>
+                <div class="grid-2col">
+                    <div class="card">
+                        <h3>Распределение по этапам</h3>
+                        <div id="stage-distribution"></div>
+                    </div>
+                    <div class="card">
+                        <h3>Ключевые риски</h3>
+                        <div id="risks"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budget Tab -->
+            <div id="budget-tab" class="tab-content">
+                <h2 class="tab-title">Структура бюджета проекта</h2>
+                <div class="budget-summary">
+                    <div class="budget-card fot">
+                        <div class="budget-label">ФОТ операционный</div>
+                        <div class="budget-amount">32 400 ₽</div>
+                        <div class="budget-desc">Зарплата команды</div>
+                    </div>
+                    <div class="budget-card invest">
+                        <div class="budget-label">Инвестиционный бюджет</div>
+                        <div class="budget-amount">52 314 ₽</div>
+                        <div class="budget-desc">ПО и оборудование</div>
+                    </div>
+                    <div class="budget-card total">
+                        <div class="budget-label">Итого бюджет 2026</div>
+                        <div class="budget-amount">84 714 ₽</div>
+                        <div class="budget-desc">Общие затраты</div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <!-- Budget table will be inserted by JavaScript -->
+                </div>
+                <div class="note-box">
+                    <div class="note-title">Ключевые статьи расходов:</div>
+                    <ul class="note-list">
+                        <li>• Этап 2.1: Оборудование и лицензии - 13 000 ₽</li>
+                        <li>• Этап 3: Консолидация баз 1С - 10 000 ₽</li>
+                        <li>• Этап 4: ПО для управления платежами - 3 314 ₽</li>
+                        <li>• Прочие расходы (1С:Архив, модули распознавания) - 1 117 ₽</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+     <footer>
+    © 2025 Produced by Alexandra Bujor. Все права защищены.
+    </footer>
+
+    <script>
+        // Project data
+        const projectData = {
+            name: "Электронный финансовый документооборот, качество и контроль данных, управление платежами",
+            duration: "4 кв 2025 - 3 кв 2026",
+            team: "4 Аналитика + 3 Разработчика + 2 Методолога",
+            budget: {
+                fot: "32 400 ₽",
+                investment: "52 314 ₽",
+                total: "84 714 ₽"
+            }
+        };
+
+        const stages = [
+            {
+                id: 1,
+                name: "Этап 1: Взаиморасчеты с контрагентами",
+                period: "1 кв 2025 - 2 кв 2026",
+                team: "2А + 2Р",
+                budget: "-",
+                color: "blue",
+                tasks: [
+                    { name: "Совершенствование механизма распознавания входящих платежей", start: "окт.25", end: "янв.26" },
+                    { name: "Перенос остатков задолженности", start: "янв.26", end: "мар.26" },
+                    { name: "Запуск обмена договорами 1С:ДО → 1С:БП", start: "янв.26", end: "мар.26" },
+                    { name: "Внедрение инструментов автоматической сверки", start: "дек.25", end: "мар.26" },
+                    { name: "Проработка списка доверенных лиц", start: "янв.26", end: "мар.26" },
+                    { name: "Создание отчетов по задолженности", start: "янв.26", end: "апр.26" },
+                    { name: "Наполнение данных", start: "фев.26", end: "июл.26" }
+                ]
+            },
+            {
+                id: 2,
+                name: "Этап 2: Сквозной ЭДО и оцифровка",
+                period: "окт.25 - 2 кв 2026",
+                team: "4А + 3Р",
+                budget: "19 000 ₽",
+                color: "green",
+                tasks: [
+                    { name: "2.1 Интеграция Диадок → 1С:ДО → 1С:Архив → 1С:БП", start: "ноя.25", end: "июн.26" },
+                    { name: "Приобретение ПП 1С:Архив (117 ₽)", start: "дек.25", end: "дек.25" },
+                    { name: "Приобретение оборудования и лицензий (13 000 ₽)", start: "фев.26", end: "фев.26" },
+                    { name: "Нормализация НСИ", start: "дек.25", end: "фев.26" },
+                    { name: "Настройка мастер-системы для НСИ", start: "ноя.25", end: "мар.26" },
+                    { name: "Разработка On-premise решения с ИИ", start: "фев.26", end: "июн.26" },
+                    { name: "Настройка правил обмена ПУД в ЭДО", start: "янв.26", end: "мар.26" },
+                    { name: "Настройка унифицированных форм договоров", start: "дек.25", end: "апр.26" },
+                    { name: "Автоматическая загрузка ЭДО документов", start: "фев.26", end: "июн.26" },
+                    { name: "2.2 Распознавание бумажных документов (1 000 ₽)", start: "окт.25", end: "июл.26" },
+                    { name: "Внедрение модуля распознавания 1С", start: "окт.25", end: "мар.26" },
+                    { name: "Настройка шаблонов и правил для ПУД", start: "фев.26", end: "апр.26" },
+                    { name: "Создание маршрутов для бумажных документов", start: "апр.26", end: "июл.26" },
+                    { name: "Внедрение маршрутов согласования ПУД", start: "май.26", end: "июл.26" }
+                ]
+            },
+            {
+                id: 3,
+                name: "Этап 3: Консолидация баз 1С",
+                period: "1 кв 26 - 2-3 кв 2026",
+                team: "2А + 2Р",
+                budget: "10 000 ₽",
+                color: "purple",
+                tasks: [
+                    { name: "Сжатие базы данных 1С (перенос остатков)", start: "апр.26", end: "май.26" },
+                    { name: "Объединение бухгалтерских баз", start: "апр.26", end: "авг.26" },
+                    { name: "Создание единых отчетов по группе компаний", start: "мар.26", end: "авг.26" }
+                ]
+            },
+            {
+                id: 4,
+                name: "Этап 4: Автоматизация управления платежами",
+                period: "3 кв 2026 - 4 кв 2026",
+                team: "2А + 2Р + 2М",
+                budget: "17 314 ₽",
+                color: "orange",
+                tasks: [
+                    { name: "Приобретение ПО и лицензий (3 314 ₽)", start: "июл.26", end: "июл.26" },
+                    { name: "Разработка ролевой модели и настройка обменов", start: "апр.26", end: "авг.26" },
+                    { name: "Формирование ЗРДС", start: "май.26", end: "сен.26" },
+                    { name: "Формирование платежного календаря", start: "июн.26", end: "сен.26" }
+                ]
+            }
+        ];
+
+        const timeline = [
+            "окт.25", "ноя.25", "дек.25", "янв.26", "фев.26", "мар.26", 
+            "апр.26", "май.26", "июн.26", "июл.26", "авг.26", "сен.26"
+        ];
+
+        const resourcePlan = [
+            { role: "Бизнес-аналитики", count: 4, stages: "Все этапы", load: "100%", notes: "Требуется найм" },
+            { role: "Разработчики", count: 3, stages: "Все этапы", load: "100%", notes: "Требуется найм" },
+            { role: "Методологи", count: 2, stages: "Этап 4", load: "50%", notes: "Требуется найм" },
+            { role: "Всего к найму", count: 9, stages: "-", load: "-", notes: "До начала проекта" }
+        ];
+
+        const budgetBreakdown = [
+            { category: "ФОТ операционный", amount: "32 400 ₽", percent: "38%" },
+            { category: "Этап 2.1: Интеграция ЭДО", amount: "13 117 ₽", percent: "15%" },
+            { category: "Этап 2.2: Распознавание документов", amount: "1 000 ₽", percent: "1%" },
+            { category: "Этап 3: Консолидация баз", amount: "10 000 ₽", percent: "12%" },
+            { category: "Этап 4: Управление платежами", amount: "17 314 ₽", percent: "20%" },
+            { category: "Прочие инвестиции", amount: "10 883 ₽", percent: "13%" }
+        ];
+
+        // State
+        let expandedStages = {1: true, 2: true, 3: true, 4: true};
+
+        // Functions
+        function switchTab(tabName) {
+            // Update active tab button
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show active tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Render content if needed
+            if (tabName === 'gantt') {
+                renderGantt();
+            } else if (tabName === 'roadmap') {
+                renderRoadmap();
+            } else if (tabName === 'resources') {
+                renderResources();
+            } else if (tabName === 'budget') {
+                renderBudget();
+            }
+        }
+
+        function toggleStage(stageId) {
+            expandedStages[stageId] = !expandedStages[stageId];
+            renderGantt();
+        }
+
+        function getTaskPosition(start, end) {
+            const startIdx = timeline.indexOf(start);
+            const endIdx = timeline.indexOf(end);
+            if (startIdx === -1 || endIdx === -1) return { left: '0%', width: '0%' };
+            const left = (startIdx / timeline.length) * 100;
+            const width = ((endIdx - startIdx + 1) / timeline.length) * 100;
+            return { left: `${left}%`, width: `${width}%` };
+        }
+
+        function renderGantt() {
+            const container = document.querySelector('.gantt-container');
+            if (!container) return;
+            
+            // Render timeline
+            let html = `
+                <div class="timeline">
+                    ${timeline.map(month => `
+                        <div class="month-cell">${month}</div>
+                    `).join('')}
+                </div>
+            `;
+            
+            // Render stages
+            stages.forEach(stage => {
+                const stagePos = getTaskPosition(
+                    stage.tasks[0].start,
+                    stage.tasks[stage.tasks.length - 1].end
+                );
+                
+                html += `
+                    <div class="stage">
+                        <div class="stage-header">
+                            <button class="stage-toggle" onclick="toggleStage(${stage.id})">
+                                ${expandedStages[stage.id] ? '▼' : '▶'}
+                            </button>
+                            <div class="stage-info">
+                                <div class="stage-title">${stage.name}</div>
+                                <div class="stage-meta">${stage.team} | Бюджет: ${stage.budget}</div>
+                            </div>
+                            <div class="stage-bar-container">
+                                <div class="stage-bar ${stage.color}" 
+                                     style="left: ${stagePos.left}; width: ${stagePos.width};"></div>
+                            </div>
+                        </div>
+                `;
+                
+                // Render tasks if expanded
+                if (expandedStages[stage.id]) {
+                    stage.tasks.forEach(task => {
+                        const taskPos = getTaskPosition(task.start, task.end);
+                        html += `
+                            <div class="task">
+                                <div class="task-name">${task.name}</div>
+                                <div class="task-bar-container">
+                                    <div class="task-bar ${stage.color}" 
+                                         style="left: ${taskPos.left}; width: ${taskPos.width};"></div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                html += `</div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function renderRoadmap() {
+            const container = document.querySelector('.roadmap-container');
+            if (!container) return;
+            
+            let html = '';
+            
+            stages.forEach((stage, idx) => {
+                html += `
+                    <div class="roadmap-stage">
+                        <div class="stage-number ${stage.color}">${idx + 1}</div>
+                        <div class="stage-card">
+                            <h3>${stage.name}</h3>
+                            <div class="stage-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Период:</span>
+                                    <span class="detail-value">${stage.period}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Команда:</span>
+                                    <span class="detail-value">${stage.team}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Бюджет:</span>
+                                    <span class="detail-value">${stage.budget}</span>
+                                </div>
+                            </div>
+                            <div class="task-list">
+                                <strong>Ключевые задачи:</strong>
+                                <ul>
+                                    ${stage.tasks.map(task => `<li>${task.name}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                        ${idx < stages.length - 1 ? '<div class="connector"></div>' : ''}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function renderResources() {
+            const container = document.querySelector('.table-container');
+            const distributionContainer = document.getElementById('stage-distribution');
+            const risksContainer = document.getElementById('risks');
+            
+            if (!container) return;
+            
+            // Render table
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Роль</th>
+                            <th>Количество</th>
+                            <th>Этапы</th>
+                            <th>Загрузка</th>
+                            <th>Примечания</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            resourcePlan.forEach((resource, idx) => {
+                const rowClass = idx === resourcePlan.length - 1 ? 'highlight' : '';
+                html += `
+                    <tr class="${rowClass}">
+                        <td>${resource.role}</td>
+                        <td>${resource.count}</td>
+                        <td>${resource.stages}</td>
+                        <td>${resource.load}</td>
+                        <td>${resource.notes}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+            
+            // Render distribution
+            if (distributionContainer) {
+                distributionContainer.innerHTML = `
+                    <div style="margin-bottom: 8px;">
+                        <span>Этап 1:</span>
+                        <span style="float: right; font-weight: 600;">2А + 2Р (4 чел.)</span>
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <span>Этап 2:</span>
+                        <span style="float: right; font-weight: 600;">4А + 3Р (7 чел.)</span>
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <span>Этап 3:</span>
+                        <span style="float: right; font-weight: 600;">2А + 2Р (4 чел.)</span>
+                    </div>
+                    <div>
+                        <span>Этап 4:</span>
+                        <span style="float: right; font-weight: 600;">2А + 2Р + 2М (6 чел.)</span>
+                    </div>
+                `;
+            }
+            
+            // Render risks
+            if (risksContainer) {
+                risksContainer.innerHTML = `
+                    <div class="risk-item">
+                        <span class="risk-icon" style="color: #ef4444;">⚠</span>
+                        <span>Сложность найма 9 квалифицированных специалистов</span>
+                    </div>
+                    <div class="risk-item">
+                        <span class="risk-icon" style="color: #f97316;">⚠</span>
+                        <span>Параллельная загрузка команды на нескольких этапах</span>
+                    </div>
+                    <div class="risk-item">
+                        <span class="risk-icon" style="color: #eab308;">⚠</span>
+                        <span>Методологи требуются только на Этапе 4</span>
+                    </div>
+                `;
+            }
+        }
+
+        function renderBudget() {
+            const container = document.querySelector('#budget-tab .table-container');
+            if (!container) return;
+            
+            let html = `
+                <h3 style="margin-bottom: 16px; font-size: 18px; font-weight: 600;">Детализация инвестиционного бюджета</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Категория</th>
+                            <th>Сумма</th>
+                            <th>Доля</th>
+                            <th>Визуализация</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            budgetBreakdown.forEach(item => {
+                html += `
+                    <tr>
+                        <td>${item.category}</td>
+                        <td style="text-align: right; font-weight: 600;">${item.amount}</td>
+                        <td style="text-align: center;">${item.percent}</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${item.percent}"></div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            renderGantt();
+            renderRoadmap();
+            renderResources();
+            renderBudget();
+        });
+    </script>
+</body>
+</html>
