@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Dashboard - Gantt & Roadmap</title>
+    <style>
+        /* Основные стили */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        body {
+            background-color: #f3f4f6;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Header стили */
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #1f2937;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .stat-icon.calendar { background: #dbeafe; color: #1d4ed8; }
+        .stat-icon.users { background: #dcfce7; color: #059669; }
+        .stat-icon.money { background: #fef3c7; color: #d97706; }
+        .stat-icon.doc { background: #f3e8ff; color: #7c3aed; }
+        
+        .stat-text .label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .stat-text .value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        /* Табы */
+        .tabs-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+        
+        .tabs-header {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+            background: white;
+            overflow-x: auto;
+        }
+        
+        .tab-btn {
+            padding: 16px 32px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn:hover {
+            color: #374151;
+            background: #f9fafb;
+        }
+        
+        .tab-btn.active {
+            color: #2563eb;
+            border-bottom: 3px solid #2563eb;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 24px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        
+        /* Диаграмма Ганта */
+        .gantt-container {
+            overflow-x: auto;
+        }
+        
+        .timeline {
+            display: flex;
+            margin-left: 320px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .month-cell {
+            width: 48px;
+            min-width: 48px;
+            text-align: center;
+            padding: 8px 2px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #4b5563;
+            border-left: 1px solid #e5e7eb;
+        }
+        
+        .stage {
+            margin-bottom: 30px;
+        }
+        
+        .stage-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .stage-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6b7280;
+            margin-right: 10px;
+            font-size: 18px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .stage-info {
+            width: 300px;
+            padding-right: 20px;
+            flex-shrink: 0;
+        }
+        
+        .stage-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        
+        .stage-meta {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .stage-period {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+        
+        .stage-bar-container {
+            flex: 1;
+            position: relative;
+            height: 35px;
+            min-width: 1008px; /* 21 месяц * 48px */
+        }
+        
+        .stage-bar {
+            position: absolute;
+            height: 100%;
+            border-radius: 6px;
+            opacity: 0.2;
+        }
+        
+        .task {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            margin-left: 50px;
+        }
+        
+        .task-name {
+            width: 300px;
+            padding-right: 20px;
+            font-size: 13px;
+            color: #374151;
+            flex-shrink: 0;
+        }
+        
+        .task-bar-container {
+            flex: 1;
+            position: relative;
+            height: 25px;
+            min-width: 1008px;
+        }
+        
+        .task-bar {
+            position: absolute;
+            height: 100%;
+            border-radius: 4px;
+        }
+        
+        /* Цвета блоков */
+        .blue { background-color: #3b82f6; }
+        .green { background-color: #10b981; }
+        .purple { background-color: #8b5cf6; }
+        .orange { background-color: #f97316; }
+        .pink { background-color: #ec4899; }
+        
+        /* Roadmap */
+        .roadmap-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .roadmap-stage {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 40px;
+        }
+        
+        .stage-number {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+        }
+        
+        .stage-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 24px;
+            transition: box-shadow 0.3s;
+        }
+        
+        .stage-card:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .stage-card h3 {
+            font-size: 18px;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+        
+        .stage-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .detail-item {
+            font-size: 14px;
+        }
+        
+        .detail-label {
+            color: #6b7280;
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .task-list {
+            font-size: 14px;
+            color: #374151;
+        }
+        
+        .task-list ul {
+            list-style: disc;
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+        
+        .task-list li {
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+        
+        .connector {
+            position: absolute;
+            left: 25px;
+            top: 50px;
+            bottom: -40px;
+            width: 2px;
+            background: #d1d5db;
+        }
+        
+        /* Таблицы */
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 24px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #f3f4f6;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+        
+        td {
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            color: #4b5563;
+            font-size: 14px;
+        }
+        
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        .highlight {
+            background: #fef3c7;
+            font-weight: 600;
+        }
+        
+        /* Бюджет */
+        .budget-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .budget-card {
+            border-radius: 10px;
+            padding: 24px;
+        }
+        
+        .budget-card.fot {
+            background: #dbeafe;
+            border-left: 5px solid #1d4ed8;
+        }
+        
+        .budget-card.invest {
+            background: #dcfce7;
+            border-left: 5px solid #059669;
+        }
+        
+        .budget-card.total {
+            background: #f3e8ff;
+            border-left: 5px solid #7c3aed;
+        }
+        
+        .budget-label {
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 8px;
+        }
+        
+        .budget-amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+        
+        .budget-desc {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #3b82f6;
+        }
+        
+        .note-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px;
+            margin-top: 24px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .note-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 8px;
+        }
+        
+        .note-list {
+            color: #92400e;
+            font-size: 14px;
+        }
+        
+        .note-list li {
+            margin-bottom: 4px;
+        }
+        
+        /* Предупреждения */
+        .alert-box {
+            background: #dbeafe;
+            border-left: 4px solid #1d4ed8;
+            padding: 16px;
+            margin-bottom: 24px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .alert-title {
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 4px;
+        }
+        
+        .alert-text {
+            color: #1e40af;
+            font-size: 14px;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 1024px) {
+            .timeline {
+                margin-left: 320px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .budget-summary {
+                grid-template-columns: 1fr;
+            }
+            
+            .stage-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .timeline {
+                margin-left: 0;
+            }
+            
+            .stage-header, .task {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .stage-info, .task-name {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .stage-bar-container, .task-bar-container {
+                min-width: 100%;
+                width: 100%;
+            }
+            
+            .stage-info {
+                width: 100%;
+            }
+            
+            .task-name {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .tab-btn {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+            
+            .tab-content {
+                padding: 16px;
+            }
+            
+            .month-cell {
+                width: 40px;
+                min-width: 40px;
+                font-size: 10px;
+                padding: 6px 1px;
+            }
+            
+            .stage-bar-container, .task-bar-container {
+                min-width: 840px; /* Минимальная ширина для мобильных */
+            }
+        }
+
+        /* ===== Вкладка «Статусы задач» ===== */
+        .status-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .status-summary-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+        }
+
+        .status-summary-emoji { font-size: 22px; line-height: 1; }
+        .status-summary-count { font-size: 22px; font-weight: 700; color: #111827; line-height: 1; }
+        .status-summary-label { font-size: 12px; color: #6b7280; margin-top: 3px; }
+
+        .status-block { margin-bottom: 32px; }
+
+        .status-block-header {
+            padding: 14px 18px;
+            border-radius: 8px;
+            color: #fff;
+            margin-bottom: 16px;
+        }
+
+        .status-block-header .sb-title { font-weight: 700; font-size: 15px; line-height: 1.4; }
+        .status-block-header .sb-meta { font-size: 12px; opacity: 0.92; margin-top: 5px; }
+
+        .status-block-note {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            color: #92400e;
+            padding: 10px 14px;
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .status-group {
+            font-weight: 700;
+            font-size: 14px;
+            color: #374151;
+            padding: 12px 0 6px;
+            margin: 6px 0 10px;
+            border-bottom: 2px solid #e5e7eb;
+            scroll-margin-top: 20px;
+        }
+
+        .status-task {
+            display: flex;
+            gap: 14px;
+            padding: 14px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #fff;
+            transition: box-shadow 0.2s, border-color 0.2s;
+            scroll-margin-top: 20px;
+        }
+
+        .status-task:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+
+        .status-task-code {
+            flex-shrink: 0;
+            font-weight: 700;
+            font-size: 13px;
+            color: #6b7280;
+            min-width: 48px;
+        }
+
+        .status-task-body { flex: 1; min-width: 0; }
+        .status-task-name { font-size: 14px; color: #1f2937; font-weight: 600; margin-bottom: 6px; }
+        .status-task-desc { font-size: 13px; color: #4b5563; line-height: 1.6; }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+            height: fit-content;
+        }
+
+        .badge-done { background: #dcfce7; color: #166534; }
+        .badge-inprogress { background: #dbeafe; color: #1e40af; }
+        .badge-notstarted { background: #f3f4f6; color: #4b5563; }
+        .badge-blocked { background: #fee2e2; color: #991b1b; }
+        .badge-paused { background: #fef3c7; color: #92400e; }
+        .badge-overdue { background: #ffedd5; color: #9a3412; }
+
+        /* Ссылки на зависимые задачи внутри описания */
+        .dep-link {
+            color: #2563eb;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 1px dashed #93c5fd;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .dep-link:hover { color: #1d4ed8; border-bottom-style: solid; }
+
+        /* Кликабельные названия задач в диаграмме Ганта */
+        .task-name-link { cursor: pointer; transition: color 0.15s; }
+        .task-name-link:hover { color: #2563eb; text-decoration: underline; }
+
+        /* Подсветка задачи при переходе с Ганта */
+        @keyframes flashHighlight {
+            0%   { background: #eff6ff; border-color: #2563eb; }
+            100% { background: #fff; border-color: #e5e7eb; }
+        }
+        .flash { animation: flashHighlight 1.8s ease-out; }
+
+        @media (max-width: 768px) {
+            .status-task { flex-direction: column; }
+            .status-task-code { min-width: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Заголовок -->
+        <div class="header">
+            <h1>Электронный финансовый документооборот</h1>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-icon calendar">📅</div>
+                    <div class="stat-text">
+                        <div class="label">Период</div>
+                        <div class="value">4 кв 2025 - 2 кв 2027</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon users">👥</div>
+                    <div class="stat-text">
+                        <div class="label">Команда</div>
+                        <div class="value">12 человек</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon money">💰</div>
+                    <div class="stat-text">
+                        <div class="label">Бюджет</div>
+                        <div class="value">84 714 ТЫС.₽</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon doc">📋</div>
+                    <div class="stat-text">
+                        <div class="label">Блоков</div>
+                        <div class="value">5</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Табы -->
+        <div class="tabs-container">
+            <div class="tabs-header">
+                <button class="tab-btn active" onclick="switchTab('gantt')">Диаграмма Ганта</button>
+                <button class="tab-btn" onclick="switchTab('roadmap')">Road-map</button>
+                <button class="tab-btn" onclick="switchTab('resources')">Ресурсный план</button>
+                <button class="tab-btn" onclick="switchTab('budget')">Бюджет</button>
+                <button class="tab-btn" id="tab-btn-statuses" onclick="switchTab('statuses')">Статусы задач</button>
+            </div>
+
+            <!-- Вкладка Ганта -->
+            <div id="gantt-tab" class="tab-content active">
+                <h2 class="tab-title">Диаграмма Ганта</h2>
+                <div class="gantt-container">
+                    <!-- Timeline будет вставлен JavaScript -->
+                </div>
+            </div>
+
+            <!-- Вкладка Roadmap -->
+            <div id="roadmap-tab" class="tab-content">
+                <h2 class="tab-title">Стратегический Road-map</h2>
+                <div class="roadmap-container">
+                    <!-- Roadmap будет вставлен JavaScript -->
+                </div>
+            </div>
+
+            <!-- Вкладка Ресурсов -->
+            <div id="resources-tab" class="tab-content">
+                <h2 class="tab-title">Ресурсный план</h2>
+                <div class="alert-box">
+                    <div class="alert-title">Общая потребность в персонале</div>
+                    <div class="alert-text">Требуется найм 9 сотрудников до начала проекта</div>
+                </div>
+                <div class="table-container">
+                    <!-- Таблица ресурсов будет вставлена JavaScript -->
+                </div>
+            </div>
+
+            <!-- Вкладка Бюджета -->
+            <div id="budget-tab" class="tab-content">
+                <h2 class="tab-title">Структура бюджета проекта</h2>
+                <div class="budget-summary">
+                    <div class="budget-card fot">
+                        <div class="budget-label">ФОТ операционный</div>
+                        <div class="budget-amount">32 400 ТЫС.₽</div>
+                        <div class="budget-desc">Зарплата команды</div>
+                    </div>
+                    <div class="budget-card invest">
+                        <div class="budget-label">Инвестиционный бюджет</div>
+                        <div class="budget-amount">52 314 ТЫС.₽</div>
+                        <div class="budget-desc">ПО и оборудование</div>
+                    </div>
+                    <div class="budget-card total">
+                        <div class="budget-label">Итого бюджет 2026</div>
+                        <div class="budget-amount">84 714 ТЫС.₽</div>
+                        <div class="budget-desc">Общие затраты</div>
+                    </div>
+                </div>
+                <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Детализация инвестиционного бюджета</h3>
+                <div class="table-container">
+                    <!-- Таблица бюджета будет вставлена JavaScript -->
+                </div>
+                <div class="note-box">
+                    <div class="note-title">Ключевые статьи расходов:</div>
+                    <ul class="note-list">
+                        <li>Блок 3: Оборудование и лицензии - 19 000 ТЫС.₽</li>
+                        <li>Блок 4: Консолидация баз 1С - 10 000 ТЫС.₽</li>
+                        <li>Блок 5: ПО для управления платежами - 17 314 ТЫС.₽</li>
+                        <li>Прочие расходы - 6 000 ТЫС.₽</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Вкладка Статусы задач -->
+            <div id="statuses-tab" class="tab-content">
+                <h2 class="tab-title">Статусы задач</h2>
+                <div class="alert-box">
+                    <div class="alert-title">Как читать вкладку</div>
+                    <div class="alert-text">Задачи сгруппированы по блокам, как на диаграмме Ганта. У каждой задачи есть статус и описание. Совет: на вкладке «Диаграмма Ганта» кликните по названию любой задачи — и вы попадёте прямо на её статус здесь.</div>
+                </div>
+                <div class="statuses-container">
+                    <!-- Статусы задач будут вставлены JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+     <footer>
+    © 2026 Produced by Alexandra Bujor. Все права защищены.
+    </footer>
+
+    <script>
+        // Данные проекта 
+        const projectData = {
+            name: "Электронный финансовый документооборот",
+            duration: "4 кв 2025 - 2 кв 2027",
+            budget: { fot: "32 400 ₽", investment: "52 314 ₽", total: "84 714 ₽" }
+        };
+
+        const stages = [
+            {
+                id: 1,
+                name: "Блок 1: Ведение взаиморасчетов с контрагентами в разрезе договоров (покупатели) - Александра Бужор",
+                period: "1 кв 2025 - 2 кв 2026",
+                team: "2А + 2Р",
+                budget: "-",
+                color: "blue",
+                tasks: [
+                    { name: "Совершенствование механизма распознавания входящих платежей в КИС", start: "окт.25", end: "фев.26" },
+                    { name: "Инвентаризация остатков задолженности на сч. 60, 62, 76 из \"сквозного\" учета в учет по договорам на исторических данных и фиксация в 1С БП", start: "янв.26", end: "фев.26" },
+                    { name: "Запуск обмена договорами 1С:ДО -> 1С:БП, заполнение полной аналитики договоров и ДС", start: "янв.26", end: "фев.26" },
+                    { name: "Модификация процедуры заведения и согласования Договоров и доп. Соглашениё в iPro и трансляция статусов согласования/подписания с ДО, включая постановку запрета на отгрузку по несогласованному/неподписанному договору", start: "апр.26", end: "май.26" },
+                    { name: "Автоматическое добавление признака \"УчётПоДоговорам\" у новых контрагентов", start: "янв.26", end: "фев.26" },
+                    { name: "Внедрение инструментов для автоматической сверки с контрагентами (через КИС, Диадок и эл.почту)", start: "дек.25", end: "фев.26" },
+                    { name: "Проработка списка доверенных лиц для подписания актов сверки, регламент получения сертификатов и доверенностей", start: "янв.26", end: "фев.26" },
+                    { name: "Создание отчетов по задолженности (дебиторской/кредиторской) в разрезе договоров", start: "янв.26", end: "мар.26" }
+                ]
+            },
+            {
+                id: 2,
+                name: "Блок 2: Ведение взаиморасчетов с контрагентами в разрезе договоров (поставщики, некоммерческие услуги) - Александра Бужор, Наталья Турбанова",
+                period: "1 кв 2025 - 3 кв 2026",
+                team: "2А + 2Р",
+                budget: "-",
+                color: "green",
+                tasks: [
+                    { name: "Разработка механизма распознавания входящих договоров поставщиков с помощью ИИ", start: "янв.26", end: "май.26" },
+                    { name: "Разработка механизма распознавания входящих неформализованных первичных документов поставщиков с помощью ИИ", start: "янв.26", end: "май.26" },
+                    { name: "Инвентаризация остатков задолженности на сч. 76.09 и фиксация в 1С БП", start: "янв.26", end: "фев.26" },
+                    { name: "Доработка карточек договоров и наполнение реквизитным составом, в том числе и доп.реквизитами для различных видов договоров", start: "янв.26", end: "апр.26" },
+                    { name: "Создание карточки УПД и наполнение реквизитным составом", start: "янв.26", end: "апр.26" },
+                    { name: "Запуск обмена договорами и УПД Диадок ->1С:ДО, заполнение полной аналитики договоров и ДС", start: "янв.26", end: "авг.26" },
+                    { name: "Модификация процедуры заведения и согласования Договоров и доп. Соглашений в СЭД (запрет заведения доп.соглашений как отдельного договора и добавление связи с родительским договором) и трансляция статусов согласования/подписания с ДО в Диадок", start: "апр.26", end: "авг.26" },
+                    { name: "Разработка механизма распознавания входящих неформализованных актов сверки поставщиков с помощью ИИ", start: "июл.26", end: "авг.26" }
+                ]
+            },
+            {
+                id: 3,
+                name: "Блок 3: Сквозной ЭДО и оцифровка - Александра Бужор, Наталья Турбанова",
+                period: "ноя.25 - окт.26",
+                team: "4А + 3Р",
+                budget: "19 000 ТЫС.₽",
+                color: "purple",
+                tasks: [
+                    { name: "3.1 Интеграция Диадок -> 1С:Документооборот -> Электронное хранилище данных ->1C: Бухгалтерия предприятия", start: "ноя.25", end: "сен.26" },
+                    { name: "Приобретение оборудования и лицензий", start: "сен.26", end: "сен.26" },
+                    { name: "Организация хранилища данных (формализованных и неформализованных документов)", start: "мар.26", end: "авг.26" },
+                    { name: "Нормализация НСИ для 1С, входящих в контур оцифровки", start: "дек.25", end: "фев.26" },
+                    { name: "Разработка маршрутов согласования и правил фиксации, хранения и обмена 1С:Документооборот с другими программными продуктами", start: "янв.26", end: "апр.26" },
+                    { name: "Разработка On-premise решения с использованием ИИ (правила обмена)", start: "янв.26", end: "май.26" },
+                    { name: "Настройка правил обмена ПУД (УПД, акт, сч-фактура) в машиночитаемом формате (некоммерческие платежи) Диадок - 1С:ДО - 1С:БП", start: "янв.26", end: "фев.26" },
+                    { name: "Настройка правил обмена УКД машиночитаемом формате (некоммерческие платежи) Диадок - 1С:ДО - 1С:БП", start: "мар.26", end: "апр.26" },
+                    { name: "Настройка видов карточек договоров в 1С:ДО исходя из направлений хозяйственной деятельности для трансляции в качестве одного из реквизитов ПУД в 1С:БП", start: "дек.25", end: "апр.26" },
+                    { name: "Автоматическая загрузка полученных документов из Контур-Диадок в 1С:ДО и последующая трансляция в места хранения дляархива ПУД", start: "фев.26", end: "май.26" },
+                    { name: "Автоматическая трансляция полученных документов из 1С:ДО и последующая передача машиночитаемых документов для формирования ПУД в 1С: Бухгалтерия предприятия", start: "фев.26", end: "май.26" },
+                    { name: "3.2 Распознавание неформализованных документов", start: "окт.25", end: "авг.26" },
+                    { name: "Развертывание LLM модели на собсбвенных мощностях для распознавания неформализованных и бумажных документов с помощью ИИ", start: "фев.26", end: "май.26" },
+                    { name: "Подготовка набора реквизитов по видам ПУД для формирования оптимальных правил распознавания LLM", start: "фев.26", end: "мар.26" },
+                    { name: "Описание процессов прохождения входящим неформализованным первичным документом всех стадий его жизненного цикла (получение, сканирование, загрузка, распознавание, проведение в регламентированном учёте и перемещение на хранение)", start: "апр.26", end: "июн.26" },
+                    { name: "Проработка оптимальных маршрутов для входящих неформализованных первичных документов (сканирование ->распознавание -> загрузка в 1С:ДО -> согласование -> трансляция в место хранения и 1С:БП ->проведение ПУД в регламентированном учете)", start: "апр.26", end: "авг.26" },
+                    { name: "Внедрение в 1С:ДО маршрутов согласования документов на оплату (ПУД)", start: "май.26", end: "авг.26" }
+                ]
+            },
+            {
+                id: 4,
+                name: "Блок 4: Консолидация баз 1С - Ирина Копичникова",
+                period: "окт.25 - 4 кв 2026",
+                team: "2А + 2Р",
+                budget: "10 000 ТЫС.₽",
+                color: "orange",
+                tasks: [
+                    { name: "Анализ структуры базы данных, предварительная проработка вариантов консолидации", start: "окт.25", end: "ноя.25" },
+                    { name: "Нормализация НСИ, в том числе и удаление дублей", start: "апр.26", end: "авг.26" },
+                    { name: "Инвентаризация остатков на товарных и затратных счетах и фиксация в 1С БП", start: "апр.26", end: "апр.26" },
+                    { name: "Сжатие базы данных 1С через перенос остатков (АО ТД Электротехмонтаж) остатки на 01.01.25 (с сохранением оборотов за 2025г.)", start: "апр.26", end: "апр.26" },
+                    { name: "Пошаговое объединение бухгалтерских баз в одну консолидированную учетную систему (на базе 1С)", start: "апр.26", end: "ноя.26" }
+                ]
+            },
+            {
+                id: 5,
+                name: "Блок 5: Автоматизация управления платежами - Наталья Турбанова",
+                period: "3 кв 2026 - 2 кв 2027",
+                team: "2А + 2Р + 2М",
+                budget: "17 314 ТЫС.₽",
+                color: "pink",
+                tasks: [
+                    { name: "Приобретение ПО и лицензий", start: "июл.26", end: "июл.26" },
+                    { name: "Разработка ролевой модели, разграничение прав доступа", start: "апр.26", end: "июл.26" },
+                    { name: "Перенос из iPro в 1С процедуры разнесения банковских выписок, в том числе разработать механизм автоматической мультизагрузки по нескольким счетам", start: "май.26", end: "ноя.26" },
+                    { name: "Настройка обменов с банком (Host-to-host)", start: "май.26", end: "ноя.26" },
+                    { name: "Формирование ЗРДС на основании обоснованной информации (согласованной, качественной, достоверной) с момента возникновения обязательства по платежу", start: "май.26", end: "авг.26" },
+                    { name: "Формирование платежного календаря по некоммерческим платежам с учетом соблюдения правил и лимитов", start: "июн.26", end: "авг.26" },
+                    { name: "Формирование платежного календаря по коммерческим платежам с учетом соблюдения правил и лимитов (необходима интеграция 1С и iPro по коммерческому платежному календарю)", start: "июн.26", end: "май.27" }
+                ]
+            }
+        ];
+
+        const timeline = [
+            "окт.25", "ноя.25", "дек.25", "янв.26", "фев.26", "мар.26", 
+            "апр.26", "май.26", "июн.26", "июл.26", "авг.26", "сен.26",
+            "окт.26", "ноя.26", "дек.26", "янв.27", "фев.27", "мар.27", "апр.27", "май.27", "июн.27"
+        ];
+
+        const resourcePlan = [
+            { role: "Бизнес-аналитики", count: 4, stages: "Все блоки", load: "100%", notes: "Требуется найм" },
+            { role: "Разработчики", count: 3, stages: "Все блоки", load: "100%", notes: "Требуется найм" },
+            { role: "Методологи", count: 2, stages: "Блок 5", load: "50%", notes: "Требуется найм" },
+            { role: "Всего к найму", count: 9, stages: "-", load: "-", notes: "До начала проекта" }
+        ];
+
+        const budgetBreakdown = [
+            { category: "ФОТ операционный", amount: "32 400 ТЫС.₽", percent: 38 },
+           // { category: "Блок 3: Интеграция ЭДО", amount: "13 117 ₽", percent: 15 },
+            { category: "Блок 3: Сквозной ЭДО и оцифровка", amount: "19 000 ТЫС.₽", percent: 22 },
+            { category: "Блок 4: Консолидация баз 1С ", amount: "10 000 ТЫС.₽", percent: 12 },
+            { category: "Блок 5: Автоматизация БП управление платежами  ", amount: "17 314 ТЫС.₽", percent: 20 },
+            { category: "Прочие инвестиции", amount: "6 000 ТЫС.₽", percent: 8 }
+        ];
+
+        // ===== Данные вкладки «Статусы задач» =====
+        // Порядок элементов строго совпадает с порядком задач в stages[].tasks
+        const statusMeta = {
+            done:       { emoji: '✅', label: 'Выполнено',     cls: 'badge-done' },
+            inprogress: { emoji: '🔄', label: 'В процессе',    cls: 'badge-inprogress' },
+            notstarted: { emoji: '⬜', label: 'Не начато',     cls: 'badge-notstarted' },
+            blocked:    { emoji: '⛔', label: 'Заблокировано', cls: 'badge-blocked' },
+            paused:     { emoji: '⏸️', label: 'На паузе',      cls: 'badge-paused' },
+            overdue:    { emoji: '⚠️', label: 'Просрочено',    cls: 'badge-overdue' }
+        };
+
+        const summaryOrder = ['done', 'inprogress', 'blocked', 'paused', 'notstarted', 'overdue'];
+
+        const blockNotes = {
+            4: 'Блок 4 целиком планируется вынести за рамки проекта.',
+            5: 'Блок 5 целиком планируется вынести за рамки проекта.'
+        };
+
+        const statusMap = {
+            1: [
+                { code: '1.1', status: 'done',       desc: 'Доработана процедура разнесения оплат по контрагентам с признаком «Учёт по договорам» в iPro. По таким контрагентам при обмене между iPro и 1С документы приходят с указанием договора, а оплаты привязываются к конкретным оплачиваемым документам.' },
+                { code: '1.2', status: 'inprogress', desc: 'На базе бухгалтерии Поволжья организована группа по сверкам с контрагентами: она ревизирует задолженность и проводит сверки с контрагентами.' },
+                { code: '1.3', status: 'blocked',    desc: 'Мастер-системой для договоров является 1С:ДО — из неё договоры должны синхронизироваться с iPro и 1С:БП. Ветка 1С:ДО → 1С:БП готова и протестирована. Блокирует ветка 1С:ДО → iPro: по ней есть нерешённые проблемы синхронизации.' },
+                { code: '1.4', status: 'paused',     desc: 'Требуется проработка и согласование со стороны бизнеса.' },
+                { code: '1.5', status: 'paused',     desc: 'Доработка сделана, но отключена: нет решения по привязке авансовых оплат к контрагентам, с которыми договор ещё не подписан, но отгрузка планируется. На одной из встреч установку признака отменили — по новому контрагенту без договора (его нет в iPro) оплаты не разносятся. Поэтому Продажи отменили автоустановку признака у новых контрагентов.' },
+                { code: '1.6', status: 'inprogress', desc: 'Готова доработка «Агент сверок»: она показывает расхождения в загруженных из Диадок формализованных актах сверки. Дополнительно ведётся доработка загрузки в 1С:БП актов сверки в формате Excel и разработка механизма распознавания неформализованных актов сверки с помощью ИИ.' },
+                { code: '1.7', status: 'notstarted', desc: 'Решение вопроса полностью на стороне бизнеса — ожидаем его проработки.' },
+                { code: '1.8', status: 'notstarted', desc: 'От бизнеса пока не поступали требования для разработки отчётов.' }
+            ],
+            2: [
+                { code: '2.1', status: 'paused',     desc: 'Требования не утверждены. Принято решение реализовывать вне основного проекта.' },
+                { code: '2.2', status: 'done',       desc: 'Разработан механизм распознавания неформализованных входящих первичных документов из Диадок на базе 1С:РПД внутри 1С:ДО — после прохождения документа по маршруту. Распознавание и трансформация из неформализованного вида в формализованный выполняются перед отправкой документа в 1С:БП.' },
+                { code: '2.3', status: 'inprogress', desc: 'Задачей занимается группа по сверкам с контрагентами.' },
+                { code: '2.4', status: 'done',       desc: 'Карточки в 1С:ДО разработаны в соответствии с видами договоров и статьями затрат. Перечень видов договоров и карточек согласован с юридическим отделом. Подготовлены предложения по изменению регламента согласования договоров (дополнительные согласующие: по статьям затрат — от ФО, по видам оплат — от казначейства).' },
+                { code: '2.5', status: 'done',       desc: 'Разработаны карточки по всем первичным документам, в том числе УПД.' },
+                { code: '2.6', status: 'blocked',    desc: 'Реализация возможна после завершения задачи 1.3.', deps: ['1.3'] },
+                { code: '2.7', status: 'paused',     desc: 'Нужна дополнительная проработка процесса со стороны бизнеса.' },
+                { code: '2.8', status: 'inprogress', desc: 'Ведётся разработка механизма распознавания неформализованных актов сверки с помощью ИИ на основе внутреннего контура компании.' }
+            ],
+            3: [
+                { code: '3.1', group: true },
+                { code: '3.1.1',  status: 'paused',     desc: 'Перенесено за рамки реализации проекта.' },
+                { code: '3.1.2',  status: 'paused',     desc: 'Организация собственного электронного хранилища данных вынесена за пределы проекта. В рамках проекта сканы бумажных документов хранятся в ЭХД DocuForce.' },
+                { code: '3.1.3',  status: 'done',       desc: 'Подготовлены и нормализованы справочники: номенклатура, статьи затрат, контрагенты.' },
+                { code: '3.1.4',  status: 'inprogress', desc: 'Маршруты разработаны и находятся на согласовании у держателей процессов. Подготовлены схемы обмена между всеми участвующими системами.' },
+                { code: '3.1.5',  status: 'paused',     desc: 'Перенесено за рамки проекта.' },
+                { code: '3.1.6',  status: 'done',       desc: 'Правила обмена настроены: документы из Диадок транслируются в 1С:БП через 1С:ДО (по пилотным видам договоров).' },
+                { code: '3.1.7',  status: 'done',       desc: 'Правила обмена настроены: документы из Диадок транслируются в 1С:БП через 1С:ДО (по пилотным видам договоров).' },
+                { code: '3.1.8',  status: 'done',       desc: 'Карточки в 1С:ДО настроены в соответствии с утверждёнными видами.' },
+                { code: '3.1.9',  status: 'paused',     desc: 'Реализация вынесена за рамки проекта. Задача связана с 3.1.1 и 3.1.2.', deps: ['3.1.1', '3.1.2'] },
+                { code: '3.1.10', status: 'done',       desc: 'Документы из Диадок транслируются в 1С:БП через 1С:ДО (по пилотным видам договоров).' },
+                { code: '3.2', group: true },
+                { code: '3.2.1', status: 'done',       desc: 'Механизм применяется при распознавании неформализованных сканов актов сверки. Распознавание ПУД реализовано другим механизмом (задача 2.2). Распознавание сканированных бумажных документов ведётся на стороне подрядчика «Инфолоджистикс».', deps: ['2.2'] },
+                { code: '3.2.2', status: 'notstarted', desc: 'Задача неактуальна в связи со сменой концепции распознавания неформализованных ПУД (см. задачу 2.2).', deps: ['2.2'] },
+                { code: '3.2.3', status: 'done',       desc: 'Процессы зафиксированы на схемах.' },
+                { code: '3.2.4', status: 'paused',     desc: 'Вынесено за рамки проекта. Задача станет актуальной при начале организации собственного ЭХД.' },
+                { code: '3.2.5', status: 'paused',     desc: 'Вынесено за рамки проекта. Задача станет актуальной при внедрении казначейства.' }
+            ],
+            4: [
+                { code: '4.1', status: 'paused', desc: 'Планируется вынести за рамки проекта.' },
+                { code: '4.2', status: 'paused', desc: 'Планируется вынести за рамки проекта.' },
+                { code: '4.3', status: 'paused', desc: 'Планируется вынести за рамки проекта.' },
+                { code: '4.4', status: 'paused', desc: 'Планируется вынести за рамки проекта.' },
+                { code: '4.5', status: 'paused', desc: 'Планируется вынести за рамки проекта.' }
+            ],
+            5: [
+                { code: '5.1', status: 'paused', desc: 'Планируется вынести за рамки проекта.' },
+                { code: '5.2', status: 'paused', desc: 'Планируется вынести за рамки проекта.' },
+                { code: '5.3', status: 'paused', desc: 'Планируется вынести за рамки проекта.' },
+                { code: '5.4', status: 'paused', desc: 'Планируется вынести за рамки проекта.' },
+                { code: '5.5', status: 'paused', desc: 'Планируется вынести за рамки проекта.' },
+                { code: '5.6', status: 'paused', desc: 'Планируется вынести за рамки проекта.' },
+                { code: '5.7', status: 'paused', desc: 'Планируется вынести за рамки проекта.' }
+            ]
+        };
+
+        // Состояние приложения
+        let activeTab = 'gantt';
+        let expandedStages = {1: true, 2: true, 3: true, 4: true, 5: true};
+
+        // Функции
+        function switchTab(tabName) {
+            // Обновить активную кнопку таба
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Показать активный контент таба
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Рендерить контент если нужно
+            if (tabName === 'gantt') {
+                renderGantt();
+            } else if (tabName === 'roadmap') {
+                renderRoadmap();
+            } else if (tabName === 'resources') {
+                renderResources();
+            } else if (tabName === 'budget') {
+                renderBudget();
+            }
+            
+            activeTab = tabName;
+        }
+
+        function toggleStage(stageId) {
+            expandedStages[stageId] = !expandedStages[stageId];
+            renderGantt();
+        }
+
+        function getTaskPosition(start, end) {
+            const startIdx = timeline.indexOf(start);
+            const endIdx = timeline.indexOf(end);
+            if (startIdx === -1 || endIdx === -1) return { left: '0%', width: '0%' };
+            const left = (startIdx / timeline.length) * 100;
+            const width = ((endIdx - startIdx + 1) / timeline.length) * 100;
+            return { left: `${left}%`, width: `${width}%` };
+        }
+
+        function getStageOverallPeriod(stage) {
+            // Находим самую раннюю дату начала среди задач
+            let earliestStart = null;
+            let latestEnd = null;
+            
+            stage.tasks.forEach(task => {
+                const startIdx = timeline.indexOf(task.start);
+                const endIdx = timeline.indexOf(task.end);
+                
+                if (startIdx !== -1) {
+                    if (earliestStart === null || startIdx < earliestStart) {
+                        earliestStart = startIdx;
+                    }
+                }
+                
+                if (endIdx !== -1) {
+                    if (latestEnd === null || endIdx > latestEnd) {
+                        latestEnd = endIdx;
+                    }
+                }
+            });
+            
+            if (earliestStart !== null && latestEnd !== null) {
+                return {
+                    start: timeline[earliestStart],
+                    end: timeline[latestEnd],
+                    left: (earliestStart / timeline.length) * 100,
+                    width: ((latestEnd - earliestStart + 1) / timeline.length) * 100
+                };
+            }
+            
+            return null;
+        }
+
+        function renderGantt() {
+            const container = document.querySelector('#gantt-tab .gantt-container');
+            if (!container) return;
+            
+            // Рендер timeline
+            let html = `
+                <div class="timeline">
+                    ${timeline.map(month => `
+                        <div class="month-cell">${month}</div>
+                    `).join('')}
+                </div>
+            `;
+            
+            // Рендер блоков
+            stages.forEach(stage => {
+                const overallPeriod = getStageOverallPeriod(stage);
+                const periodText = overallPeriod ? 
+                    `Период: ${overallPeriod.start} - ${overallPeriod.end}` : 
+                    `Период: ${stage.period}`;
+                
+                html += `
+                    <div class="stage">
+                        <div class="stage-header">
+                            <button class="stage-toggle" onclick="toggleStage(${stage.id})">
+                                ${expandedStages[stage.id] ? '▼' : '▶'}
+                            </button>
+                            <div class="stage-info">
+                                <div class="stage-title">${stage.name}</div>
+                                <div class="stage-meta">${stage.team} | Бюджет: ${stage.budget}</div>
+                                <div class="stage-period">${periodText}</div>
+                            </div>
+                            <div class="stage-bar-container">
+                `;
+                
+                if (overallPeriod) {
+                    html += `
+                        <div class="stage-bar ${stage.color}" 
+                             style="left: ${overallPeriod.left}%; width: ${overallPeriod.width}%;"></div>
+                    `;
+                }
+                
+                html += `
+                            </div>
+                        </div>
+                `;
+                
+                // Рендер задач если блок развернут
+                if (expandedStages[stage.id]) {
+                    stage.tasks.forEach((task, taskIdx) => {
+                        const taskPos = getTaskPosition(task.start, task.end);
+                        html += `
+                            <div class="task">
+                                <div class="task-name task-name-link" onclick="goToStatus(${stage.id}, ${taskIdx})" title="Открыть статус задачи">${task.name}</div>
+                                <div class="task-bar-container">
+                                    <div class="task-bar ${stage.color}" 
+                                         style="left: ${taskPos.left}; width: ${taskPos.width};"></div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                html += `</div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function renderRoadmap() {
+            const container = document.querySelector('.roadmap-container');
+            if (!container) return;
+            
+            let html = '';
+            
+            stages.forEach((stage, idx) => {
+                html += `
+                    <div class="roadmap-stage">
+                        <div class="stage-number ${stage.color}">${idx + 1}</div>
+                        <div class="stage-card">
+                            <h3>${stage.name}</h3>
+                            <div class="stage-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Период:</span>
+                                    <span class="detail-value">${stage.period}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Команда:</span>
+                                    <span class="detail-value">${stage.team}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Бюджет:</span>
+                                    <span class="detail-value">${stage.budget}</span>
+                                </div>
+                            </div>
+                            <div class="task-list">
+                                <strong>Ключевые задачи:</strong>
+                                <ul>
+                                    ${stage.tasks.map(task => `<li>${task.name}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                        ${idx < stages.length - 1 ? '<div class="connector"></div>' : ''}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function renderResources() {
+            const container = document.querySelector('#resources-tab .table-container');
+            if (!container) return;
+            
+            // Рендер таблицы
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Роль</th>
+                            <th>Количество</th>
+                            <th>Блоки</th>
+                            <th>Загрузка</th>
+                            <th>Примечания</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            resourcePlan.forEach((resource, idx) => {
+                const rowClass = idx === resourcePlan.length - 1 ? 'highlight' : '';
+                html += `
+                    <tr class="${rowClass}">
+                        <td>${resource.role}</td>
+                        <td style="text-align: center;">${resource.count}</td>
+                        <td>${resource.stages}</td>
+                        <td style="text-align: center;">${resource.load}</td>
+                        <td>${resource.notes}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        function renderBudget() {
+            const container = document.querySelector('#budget-tab .table-container');
+            if (!container) return;
+            
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Категория</th>
+                            <th>Сумма</th>
+                            <th>Доля</th>
+                            <th>Визуализация</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            budgetBreakdown.forEach(item => {
+                html += `
+                    <tr>
+                        <td>${item.category}</td>
+                        <td style="text-align: right; font-weight: 600;">${item.amount}</td>
+                        <td style="text-align: center;">${item.percent}%</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${item.percent}%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        // Индекс: код задачи -> её расположение (stageId, индекс) для ссылок-зависимостей
+        const codeIndex = {};
+        Object.keys(statusMap).forEach(sid => {
+            statusMap[sid].forEach((item, idx) => {
+                if (item.code) codeIndex[item.code] = { stageId: Number(sid), idx: idx };
+            });
+        });
+
+        // Превращает упомянутые в описании коды задач в кликабельные ссылки
+        function linkifyDeps(desc, refs) {
+            if (!refs || !refs.length) return desc;
+            // сначала более длинные коды (3.1.1 раньше, чем 3.1), чтобы не пересекались
+            const sorted = refs.slice().sort((a, b) => b.length - a.length);
+            let out = desc;
+            sorted.forEach(code => {
+                const target = codeIndex[code];
+                if (!target) return;
+                const esc = code.replace(/\./g, '\\.');
+                // граница слева — начало/не цифра-точка; справа — не цифра-точка (без lookbehind, для совместимости)
+                // слева: начало или не цифра/точка; справа: не цифра и не «.цифра» (чтобы не ловить 1.30 или 3.1.1),
+                // но обычная точка-конец предложения допускается
+                const re = new RegExp('(^|[^\\d.])(' + esc + ')(?!\\d)(?!\\.\\d)', 'g');
+                out = out.replace(re, function(match, pre) {
+                    return pre + '<span class="dep-link" onclick="goToStatus(' + target.stageId +
+                        ', ' + target.idx + ')" title="Перейти к задаче ' + code + '">' + code + '</span>';
+                });
+            });
+            return out;
+        }
+
+        function renderStatuses() {
+            const container = document.querySelector('#statuses-tab .statuses-container');
+            if (!container) return;
+
+            // Счётчики по статусам
+            const counts = { done: 0, inprogress: 0, notstarted: 0, blocked: 0, paused: 0, overdue: 0 };
+            stages.forEach(stage => {
+                (statusMap[stage.id] || []).forEach(item => {
+                    if (item.status && counts[item.status] !== undefined) counts[item.status]++;
+                });
+            });
+
+            let html = '<div class="status-summary">';
+            summaryOrder.forEach(key => {
+                const m = statusMeta[key];
+                html += `
+                    <div class="status-summary-card">
+                        <div class="status-summary-emoji">${m.emoji}</div>
+                        <div>
+                            <div class="status-summary-count">${counts[key]}</div>
+                            <div class="status-summary-label">${m.label}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            // Блоки и задачи (та же разбивка, что на диаграмме Ганта)
+            stages.forEach(stage => {
+                const items = statusMap[stage.id] || [];
+                html += `
+                    <div class="status-block">
+                        <div class="status-block-header ${stage.color}">
+                            <div class="sb-title">${stage.name}</div>
+                            <div class="sb-meta">${stage.team} | Бюджет: ${stage.budget} | Период: ${stage.period}</div>
+                        </div>
+                `;
+
+                if (blockNotes[stage.id]) {
+                    html += `<div class="status-block-note">📌 ${blockNotes[stage.id]}</div>`;
+                }
+
+                stage.tasks.forEach((task, idx) => {
+                    const item = items[idx] || { status: 'notstarted', desc: '', code: '' };
+
+                    if (item.group) {
+                        html += `<div class="status-group" id="status-task-${stage.id}-${idx}">${task.name}</div>`;
+                        return;
+                    }
+
+                    const m = statusMeta[item.status] || statusMeta.notstarted;
+                    html += `
+                        <div class="status-task" id="status-task-${stage.id}-${idx}">
+                            <div class="status-task-code">${item.code || ''}</div>
+                            <div class="status-task-body">
+                                <div class="status-task-name">${task.name}</div>
+                                <div class="status-task-desc">${linkifyDeps(item.desc || '', item.deps)}</div>
+                            </div>
+                            <div class="status-badge ${m.cls}">${m.emoji} ${m.label}</div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Переход с диаграммы Ганта на статус конкретной задачи
+        function goToStatus(stageId, taskIdx) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById('tab-btn-statuses');
+            if (btn) btn.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const tab = document.getElementById('statuses-tab');
+            if (tab) tab.classList.add('active');
+            activeTab = 'statuses';
+
+            const el = document.getElementById('status-task-' + stageId + '-' + taskIdx);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.remove('flash');
+                void el.offsetWidth; // перезапуск анимации
+                el.classList.add('flash');
+                setTimeout(() => el.classList.remove('flash'), 1800);
+            }
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            renderGantt();
+            renderRoadmap();
+            renderResources();
+            renderBudget();
+            renderStatuses();
+        });
+    </script>
+</body>
+</html>
